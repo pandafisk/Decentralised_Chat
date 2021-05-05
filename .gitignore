@@ -1,3 +1,4 @@
+### Erlang ###
 .eunit
 *.o
 *.beam
@@ -15,3 +16,15 @@ deps
 .rebar3
 _build/
 _checkouts/
+
+### vscode ###
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+*.DAT
+*.LOG
+*.DCD
+*.DCL
