@@ -27,9 +27,9 @@ put(Table, Name, Message) ->
 
 msg_history(Table_name)->
     Iterator =  fun(Rec,_)->
-                    {_, Name, Msg, Time} = Rec,
+                    {_, Time, Msg, Name} = Rec,
                     self() ! Rec,
-                    io:format("~p: ~p - ~p~n",[Name, Msg, Time])
+                    io:format("~p: ~p - ~p (~p)~n",[Table_name, Name, Msg, Time])
                 end,
     case mnesia:is_transaction() of
         true -> mnesia:foldl(Iterator,[],Table_name);
