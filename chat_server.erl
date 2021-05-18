@@ -55,17 +55,17 @@ init(_Args) ->
 
 handle_call({new_group, Group}, _From, State) ->
     Get = test:new_group(Group),
-    io:format("~p (~p) User: ~p Exists.~n",[?MODULE, self(), Get]),
+    io:format("~p (~p) Group: ~p created.~n",[?MODULE, self(), Get]),
     {reply, ok, State};
 
 handle_call({join, Group, User}, _From, State) ->
     Get = test:join(Group, User),
-    io:format("~p (~p) User: ~p Exists.~n",[?MODULE, self(), Get]),
+    io:format("~p (~p) Joined ~p.~n",[?MODULE, self(), Get]),
     {reply, ok, State};
 
 handle_call({sendMessage, Group, User, Message}, _From, State) ->
     Get = test:sendMessage(Group, User, Message),
-    io:format("~p (~p) User: ~p Exists.~n",[?MODULE, self(), Get]),
+    io:format("~p (~p) Sent message.~n",[?MODULE, self()]),
     {reply, ok, State};
 
 handle_call({findUser, User}, _From, State) ->
