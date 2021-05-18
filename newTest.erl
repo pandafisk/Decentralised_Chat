@@ -34,11 +34,11 @@ sendMsg(Group, User, Message) ->
             name = User,
             message = Message}, write)
     end,
-    {_, _, _, Users} = fun() -> 
-        mnesia:match_object({Group, '_', '_', '_'})
-    end,
-    newMessage = io_lib:format("(~p - ~p): ~p", [Group, User, Message]),
-    send(Users, newMessage),
+    %% {_, _, _, Users} = fun() -> 
+    %%    mnesia:match_object({Group, '_', '_', '_'})
+    %% end,
+    %% newMessage = io_lib:format("(~p - ~p): ~p", [Group, User, Message]),
+    %% send(Users, newMessage),
     mnesia:transaction(Insert).
 
 
