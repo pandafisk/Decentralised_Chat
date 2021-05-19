@@ -7,7 +7,7 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 %%Public
--export([newGroup/1, joinGroup/2, sendMessage/3, findUser/1, findGroup/1, users/1, history/1]).
+-export([newGroup/1, joinGroup/2, sendMessage/3, findUser/2, findGroup/1, users/1, history/1]).
 
 
 -record(state, {}).
@@ -31,8 +31,8 @@ joinGroup(Group, User) ->
 sendMessage(Group, User, Message) ->
     gen_server:call(?MODULE, {sendMessage, Group, User, Message}).
 
-findUser(User) ->
-    gen_server:call(?MODULE, {findUser, User}).
+findUser(Group, User) ->
+    gen_server:call(?MODULE, {findUser, Group, User}).
 
 findGroup(Group) ->
     gen_server:call(?MODULE, {findGroup, Group}).
@@ -55,21 +55,21 @@ init(_Args) ->
 
 handle_call({new_group, Group}, _From, State) ->
     Get = test:new_group(Group),
-    io:format("~p (~p) Group: ~p created.~n",[?MODULE, self(), Get]),
+    io:format("~p (~p) User: ~p Exists.~n",[?MODULE, self(), Get]),
     {reply, ok, State};
 
 handle_call({join, Group, User}, _From, State) ->
     Get = test:join(Group, User),
-    io:format("~p (~p) Joined ~p.~n",[?MODULE, self(), Get]),
+    io:format("~p (~p) User: ~p Exists.~n",[?MODULE, self(), Get]),
     {reply, ok, State};
 
 handle_call({sendMessage, Group, User, Message}, _From, State) ->
     Get = test:sendMsg(Group, User, Message),
-    io:format("~p (~p) Sent message.~n",[?MODULE, self()]),
+    io:format("~p (~p) User: ~p Exists.~n",[?MODULE, self(), Get]),
     {reply, ok, State};
 
-handle_call({findUser, User}, _From, State) ->
-    Get = test:findUser(User),
+handle_call({findUser, Group, User}, _From, State) ->
+    Get = test:findUser(Group, User),
     io:format("~p (~p) User: ~p Exists.~n",[?MODULE, self(), Get]),
     {reply, ok, State};
 
@@ -79,7 +79,7 @@ handle_call({findGroup, Group}, _From, State) ->
     {reply, ok, State};
 
 handle_call({users, Group}, _From, State) ->
-    Users = test:users(Group),
+    Users = test:findUniques(Group),
     io:format("~p (~p) Users: ~p~n",[?MODULE, self(), Users]),
     {reply, Users, State};
 

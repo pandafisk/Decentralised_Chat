@@ -1,0 +1,21 @@
+All files are working, last tested.
+
+All functions should be usable locally.
+
+Start up a new server with:
+chat_supervisor:start_link_from_shell().
+
+Then call:
+chat_client:createGroup(friends).
+
+After that you can join or send essages with:
+chat_client:joinGroup(friends, self()).
+chat_client:sendMessage(friends, self(), "Hello There!").
+
+Then all the other functions are accesable:
+chat_client:findGroup(friends).
+chat_client:findUser(friends, self()).
+chat_client:listUsers(friends).
+chat_client:viewHistory(friends).
+
+The prints don't work yet, because i haven't had time to update them, but i will do that later.
