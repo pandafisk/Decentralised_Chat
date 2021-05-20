@@ -2,6 +2,8 @@
 
 -compile(export_all).
 
+
+% The record should look something like: {date, {PID, UserName}, message}
 -record(msg, {date, name, message}).
 
 init() ->
@@ -40,6 +42,13 @@ join(Group, User) ->
             send(Users, NewMessage),
             mnesia:transaction(Insert)
     end.
+    
+    % History = msg_history(Group),
+    % L = lists:flatlength(History),
+    % case L > 5 of
+    %     true -> lists:nthtail(L, History);
+    %     false -> History
+    % end.
 
 
 %% A functions that sends a message to the group.
@@ -73,8 +82,9 @@ msg_history(Group) ->
 
 %% A function for displaying message history of a group.
 search_history(Table_name)->
-    Iterator =  fun(Rec,_)->
+    Iterator =  fun(Rec,Arr)->
                     {_, Time, Name, Msg} = Rec,
+                    {_, UserName} = Name,
                     self() ! Rec,
                     NewMessage = lists:flatten(io_lib:format("~p: ~p - ~p (~p)~n",[Table_name, UserName, Msg, Time])),
                     [NewMessage|Arr]
