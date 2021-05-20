@@ -23,25 +23,43 @@ new_group(Name) ->
 %% A function for joining an existing group.
 join(Group, User) ->
     %message = io_lib:format("~p joined the  group!", [User),
-    Message = "Joined the group!",
-    sendMsg(Group, User, Message).
+    Users = findUniqueUsers(Group),
+    {_, UserName} = User,
+    case lists:member(UserName, Users) of
+        true ->
+            io:format("You are already a member of this group.\n");
+        false ->
+            Message = "Joined the group!",
+            Insert = fun() -> 
+                mnesia:write(Group, #msg{
+                    date = erlang:timestamp(),
+                    name = User,
+                    message = Message}, write)
+            end,
+            NewMessage = lists:flatten(io_lib:format("(~p - ~p): ~p", [Group, User, Message])),
+            send(Users, NewMessage),
+            mnesia:transaction(Insert)
+    end.
 
 
 %% A functions that sends a message to the group.
 sendMsg(Group, User, Message) ->
-    Insert = fun() -> 
-        mnesia:write(Group, #msg{
-            date = erlang:timestamp(),
-            name = User,
-            message = Message}, write)
-    end,
-    Users = findUniques(Group),
-    % {_, _, Users} = fun() -> 
-    %     mnesia:match_object(Group, {'_', '_', '_'}, read)
-    % end,
-    NewMessage = lists:flatten(io_lib:format("(~p - ~p): ~p", [Group, User, Message])),
-    send(Users, NewMessage),
-    mnesia:transaction(Insert).
+    Users = findUniquePIDs(Group),
+    {PID, _} = User,
+    case lists:member(PID, Users) of
+        true ->
+            Insert = fun() -> 
+                mnesia:write(Group, #msg{
+                    date = erlang:timestamp(),
+                    name = User,
+                    message = Message}, write)
+            end,
+            NewMessage = lists:flatten(io_lib:format("(~p - ~p): ~p", [Group, User, Message])),
+            send(Users, NewMessage),
+            mnesia:transaction(Insert);
+        false ->
+            io:format("Please join the group: ~p, before sending a message.\n", [Group])
+    end.
 
 
 
@@ -49,12 +67,17 @@ sendMsg(Group, User, Message) ->
 %% FUNCTIONS FOR DATABASE INTERACTION
 %% ------------------------------------------
 
+msg_history(Group) ->
+    History = search_history(Group),
+    lists:reverse(History).
+
 %% A function for displaying message history of a group.
-msg_history(Table_name)->
+search_history(Table_name)->
     Iterator =  fun(Rec,_)->
                     {_, Time, Name, Msg} = Rec,
                     self() ! Rec,
-                    io:format("~p: ~p - ~p (~p)~n",[Table_name, Name, Msg, Time])
+                    NewMessage = lists:flatten(io_lib:format("~p: ~p - ~p (~p)~n",[Table_name, UserName, Msg, Time])),
+                    [NewMessage|Arr]
                 end,
     case mnesia:is_transaction() of
         true -> mnesia:foldl(Iterator,[],Table_name);
@@ -65,14 +88,18 @@ msg_history(Table_name)->
 
 
 %% A function for listing users in a group.
-findUniques(Group) ->
-    Users = findUsers(Group),
+findUniqueUsers(Group) ->
+    Users = findUserNames(Group),
+    uniques(Users).
+
+findUniquePIDs(Group) ->
+    Users = findUserPIDs(Group),
     uniques(Users).
 
 
 %% A function for finding a User, based on Username.
 findUser(Group, User) ->
-    Users = findUsers(Group),
+    Users = findUserNames(Group),
     lists:member(User, Users).
 
 
@@ -87,10 +114,25 @@ findGroup(Group) ->
 %% ------------------------------------------
 
 % Find all users that are not unique
-findUsers(Table_name) ->
+findUserNames(Table_name) ->
     Iterator =  fun(Rec,Arr)->
                     {_, _, Name, _} = Rec,
-                    [Name|Arr]
+                    {_, UserName} = Name,
+                    [UserName|Arr]
+                end,
+    case mnesia:is_transaction() of
+        true -> mnesia:foldl(Iterator,[],Table_name);
+        false -> 
+            Exec = fun({Fun,Tab}) -> mnesia:foldl(Fun, [],Tab) end,
+            mnesia:activity(transaction,Exec,[{Iterator,Table_name}],mnesia_frag)
+    end.
+
+% Find all users that are not unique
+findUserPIDs(Table_name) ->
+    Iterator =  fun(Rec,Arr)->
+                    {_, _, Name, _} = Rec,
+                    {PID, _} = Name,
+                    [PID|Arr]
                 end,
     case mnesia:is_transaction() of
         true -> mnesia:foldl(Iterator,[],Table_name);
