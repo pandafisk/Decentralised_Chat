@@ -79,7 +79,7 @@ handle_call({findGroup, Group}, _From, State) ->
     {reply, ok, State};
 
 handle_call({users, Group}, _From, State) ->
-    Users = test:findUniques(Group),
+    Users = test:findUniqueUsers(Group),
     io:format("~p (~p) Users: ~p~n",[?MODULE, self(), Users]),
     {reply, Users, State};
 
