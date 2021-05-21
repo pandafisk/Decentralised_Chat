@@ -5,15 +5,15 @@
 -record(msg, {date, name, message}).
 
 init() ->
-    mnesia:start(),
-    "Ready".
+    mnesia:create_schema([node()]),
+    mnesia:start().
 %% ------------------------------------------
 %% FUNCTIONS FOR DEALING WITH COMMUNICATION
 %% ------------------------------------------
 
 %% A function for creating a new group.
 new_group(Name) ->
-    mnesia:create_schema([node()]),
+    % mnesia:change_table_copy_type(schema, node(), disc_copies),
     mnesia:create_table(Name, [
         {attributes, record_info(fields, msg)},
         {disc_copies, [node()]}, 
@@ -55,7 +55,10 @@ msg_history(Table_name)->
     Iterator =  fun(Rec,_)->
                     {_, Time, Name, Msg} = Rec,
                     self() ! Rec,
-                    io:format("~p: ~p - ~p (~p)~n",[Table_name, Name, Msg, Time])
+                    % Please see
+                    {{Y,M,D},{ H,MM,SS}} = calendar:now_to_datetime(Time),
+                    Timestamp = lists:flatten(io_lib:format("~B-~2.10.0B-~2.10.0B ~2.10.0B:~2.10.0B:~2.10.0B", [Y, M, D,H,MM,SS])),
+                    io:format("~p: ~p - ~p sent in ~p ~n",[Table_name, Name, Msg, Timestamp])
                 end,
     case mnesia:is_transaction() of
         true -> mnesia:foldl(Iterator,[],Table_name);
@@ -125,7 +128,8 @@ uniques([X | Rest], Seen, Acc) ->
         rpc:call(NodeName, test, restartReplica, []),
         mnesia:change_config(extra_db_nodes, [NodeName]),
         mnesia:change_table_copy_type(schema, NodeName, disc_copies),
-        mnesia:add_table_copy(msg, NodeName, disc_copies).
+        Tabs = mnesia:system_info(tables),
+        [mnesia:add_table_copy(H, 'adam@DESKTOP-6ECBQGE', disc_copies) || H <- Tabs].
     
     %% Removes a given node from the cluster of active server-nodes
     removeReplica(Nodename) ->

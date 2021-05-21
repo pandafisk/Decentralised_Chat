@@ -1,7 +1,8 @@
 -module(chat_client).
-
+-import(lists,[nth/2]).
+-import(string,[lexemes/2, titlecase/1]).
 %% Internal
--export([createGroup/1, joinGroup/2, sendMessage/3, viewHistory/1, listUsers/1, findUser/2, findGroup/1]).
+-export([createGroup/1, joinGroup/2, sendMessage/2, viewHistory/1, listUsers/1, findUser/2, findGroup/1]).
 %% Remote
 -export([remote_createGroup/2, remote_joinGroup/3, remote_sendMessage/4, remote_viewHistory/2, remote_listUsers/2, remote_findUser/3, remote_findGroup/2]).
 %% Helpers
@@ -22,8 +23,14 @@ joinGroup(Group, User) ->
     chat_server:joinGroup(Group, User).
 
 %% Sends a message to all users in the group with name Group.
-sendMessage(Group, User, Message) ->
-    chat_server:sendMessage(Group, User, Message).
+sendMessage(Group, Message) ->
+    % Please see
+    Node = atom_to_list(node()),
+    Seperator = "@",
+    List = lexemes(Node, Seperator),
+    NodeName = list_to_atom(titlecase(nth(1, List))),
+    chat_server:sendMessage(Group, NodeName, Message),
+    chat_server:history(Group).
 
 %% Checks if a user exists, by userame.
 findUser(Group, User) ->
