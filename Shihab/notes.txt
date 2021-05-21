@@ -4,7 +4,9 @@ All functions should be usable locally.
 
 Start up a new server with:
 chat_supervisor:start_link_from_shell().
-
+TODO:
+1. Integrate JOIN GROUP functionalities
+2. Do integration testing
 Then call:
 chat_client:createGroup(friends).
 

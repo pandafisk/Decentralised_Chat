@@ -1,6 +1,5 @@
 -module(chat_client).
--import(lists,[nth/2]).
--import(string,[lexemes/2, titlecase/1]).
+
 %% Internal
 -export([createGroup/1, joinGroup/2, sendMessage/2, viewHistory/1, listUsers/1, findUser/2, findGroup/1]).
 %% Remote
@@ -24,13 +23,23 @@ joinGroup(Group, User) ->
 
 %% Sends a message to all users in the group with name Group.
 sendMessage(Group, Message) ->
-    % Please see
-    Node = atom_to_list(node()),
-    Seperator = "@",
-    List = lexemes(Node, Seperator),
-    NodeName = list_to_atom(titlecase(nth(1, List))),
-    chat_server:sendMessage(Group, NodeName, Message),
-    chat_server:history(Group).
+    % Please see 
+    chat_server:sendMessage(Group, node(), Message),
+    % TODO
+    % find all nodes in group
+    GroupUsers = chat_server:users(Group),
+    % for each node call chat_server:history(Group).
+    showHistoryToAll(GroupUsers, Group).
+
+showHistoryToAll([], _) ->
+    io:format("---END OF CHAT HISTORY--~n");
+
+showHistoryToAll([User|GroupUsers], Group) ->
+    io:format("---USER:~p~n",[User]),
+    io:format("---Group Name:~p~n",[Group]),
+    rpc:call(User, chat_client, viewHistory, [Group]),
+    showHistoryToAll(GroupUsers, Group).
+
 
 %% Checks if a user exists, by userame.
 findUser(Group, User) ->
@@ -80,6 +89,7 @@ remote_listUsers(Server, Group) ->
 
 %% Remote version of viewHistory.
 remote_viewHistory(Server, Group) ->
+    io:format("---Server:~p~n",[Server]),
     rpc:call(Server, chat_client, viewHistory, [Group]).
 
 

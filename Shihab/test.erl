@@ -1,5 +1,6 @@
 -module(test).
-
+-import(lists,[nth/2]).
+-import(string,[lexemes/2, titlecase/1]).
 -compile(export_all).
 
 -record(msg, {date, name, message}).
@@ -41,7 +42,7 @@ sendMsg(Group, User, Message) ->
     %     mnesia:match_object(Group, {'_', '_', '_'}, read)
     % end,
     NewMessage = lists:flatten(io_lib:format("(~p - ~p): ~p", [Group, User, Message])),
-    send(Users, NewMessage),
+    % send(Users, NewMessage),
     mnesia:transaction(Insert).
 
 
@@ -56,9 +57,13 @@ msg_history(Table_name)->
                     {_, Time, Name, Msg} = Rec,
                     self() ! Rec,
                     % Please see
+                    Node = atom_to_list(Name),
+                    Seperator = "@",
+                    List = lexemes(Node, Seperator),
+                    NodeName = list_to_atom(titlecase(nth(1, List))),
                     {{Y,M,D},{ H,MM,SS}} = calendar:now_to_datetime(Time),
                     Timestamp = lists:flatten(io_lib:format("~B-~2.10.0B-~2.10.0B ~2.10.0B:~2.10.0B:~2.10.0B", [Y, M, D,H,MM,SS])),
-                    io:format("~p: ~p - ~p sent in ~p ~n",[Table_name, Name, Msg, Timestamp])
+                    io:format("~p: ~p - ~p sent in ~p ~n",[Table_name, NodeName, Msg, Timestamp])
                 end,
     case mnesia:is_transaction() of
         true -> mnesia:foldl(Iterator,[],Table_name);
