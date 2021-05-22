@@ -50,36 +50,40 @@ history(Table) ->
 init(_Args) ->
     process_flag(trap_exit, true),
     io:format("~p (~p) starting...~n", [{local, ?MODULE}, self()]),
-    test:init(),
+    db_logic:init(),
     {ok, #state{}}.
 
 handle_call({new_group, Group}, _From, State) ->
-    test:new_group(Group),
+    db_logic:new_group(Group),
     io:format("~p (~p) The group ~p has been created.~n",[?MODULE, self(), Group]),
     {reply, ok, State};
 
 handle_call({sendMessage, Group, User, Message}, _From, State) ->
-    test:sendMsg(Group, User, Message),
+    db_logic:sendMsg(Group, User, Message),
     io:format("~p (~p) You have sent your message to all users in ~p.~n",[?MODULE, self(), Group]),
     {reply, ok, State};
 
 handle_call({findUser, Group, User}, _From, State) ->
-    test:findUser(Group, User),
-    io:format("~p (~p) User: ~p Exists.~n",[?MODULE, self(), User]),
+    case db_logic:findUser(Group, User) of
+        true -> io:format("~p (~p) User: ~p Exists. ~n",[?MODULE, self(), User]);
+        false -> io:format("~p (~p) User: ~p Does not exist. ~n",[?MODULE, self(), User])
+    end,
     {reply, ok, State};
 
 handle_call({findGroup, Group}, _From, State) ->
-    test:findGroup(Group),
-    io:format("~p (~p) Group: ~p Exists.~n",[?MODULE, self(), Group]),
+    case db_logic:findGroup(Group) of
+        true -> io:format("~p (~p) Group: ~p Exists.~n",[?MODULE, self(), Group]);
+        false -> io:format("~p (~p) Group: ~p Does not exist.~n",[?MODULE, self(), Group])
+    end,
     {reply, ok, State};
 
 handle_call({users, Group}, _From, State) ->
-    Users = test:findUniques(Group),
+    Users = db_logic:findUniques(Group),
     io:format("~p (~p) Users: ~p~n",[?MODULE, self(), Users]),
     {reply, Users, State};
 
 handle_call({history, Table}, _From, State) ->
-    Chat = test:msg_history(Table),
+    Chat = db_logic:msg_history(Table),
     io:format("~p (~p) Messages: ~p~n",[?MODULE, self(), Chat]),
     {reply, Chat, State};
 

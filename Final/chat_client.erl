@@ -1,7 +1,7 @@
 -module(chat_client).
 
 %% Internal
--export([createGroup/1, sendMessage/2, viewHistory/1, listUsers/1, findUser/2, findGroup/1]).
+-export([createGroup/1, sendMessage/2, viewHistory/1, listUsers/1, findUser/2, findGroup/1, start_link/0, addNode/1]).
 %% Remote
 -export([remote_createGroup/2, remote_sendMessage/4, remote_viewHistory/2, remote_listUsers/2, remote_findUser/3, remote_findGroup/2]).
 %% Helpers
@@ -12,6 +12,16 @@
 %%               Internal Calls
 %% ======================================================
 %% These function can only be called internally from a server-node
+
+%% Start link from local node
+start_link() ->
+    chat_supervisor:start_link_from_shell().
+
+%% Add local node to cluster. 'Host' must be one node already in the cluster
+addNode(Host) ->
+    mnesia:start(),
+    chat_supervisor:start_link_from_shell(),
+    rpc:call(Host, db_logic, addReplica, [node()]).
 
 %% Creates a new group with the name group.
 createGroup(Group) ->
@@ -96,7 +106,7 @@ connect_client(Host) ->
 %% Selects a random node from one of the servers, to be used as dedicated server for a client
 %% Works as a load-balancer
 get_server() ->
-    Servers = mnesia:table_info(test, where_to_write),
+    Servers = mnesia:table_info(db_logic, where_to_write),
     lists:nth(rand:uniform(length(Servers)), Servers).
 
 

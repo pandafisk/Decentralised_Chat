@@ -1,4 +1,4 @@
--module(test).
+-module(db_logic).
 -import(lists,[nth/2]).
 -import(string,[lexemes/2, titlecase/1]).
 -compile(export_all).
@@ -8,9 +8,9 @@
 init() ->
     mnesia:create_schema([node()]),
     mnesia:start().
-%% ------------------------------------------
+%% ======================================================
 %% FUNCTIONS FOR DEALING WITH COMMUNICATION
-%% ------------------------------------------
+%% ======================================================
 
 %% A function for creating a new group.
 new_group(Name) ->
@@ -30,9 +30,9 @@ sendMsg(Group, User, Message) ->
     end,
     mnesia:transaction(Insert).
 
-%% ------------------------------------------
+%% ======================================================
 %% FUNCTIONS FOR DATABASE INTERACTION
-%% ------------------------------------------
+%% ======================================================
 %% A function for displaying message history of a group.
 msg_history(Table_name)->
     Iterator =  fun(Rec,_)->
@@ -70,9 +70,9 @@ findGroup(Group) ->
     {L,_} = lists:split(length(Tabs)-1, Tabs),
     lists:member(Group, L).
 
-%% ------------------------------------------
+%% ======================================================
 %% LOCAL FUNCTIONS
-%% ------------------------------------------
+%% ======================================================
 % Find all users that are not unique
 findUsers(Table_name) ->
     Iterator =  fun(Rec,Arr)->
@@ -99,7 +99,7 @@ uniques([X | Rest], Seen, Acc) ->
 
 % Creates a copy of the current database, and creates a connection to another node.
 addReplica(NodeName) ->
-    rpc:call(NodeName, test, restartReplica, []),
+    rpc:call(NodeName, db_logic, restartReplica, []),
     mnesia:change_config(extra_db_nodes, [NodeName]),
     mnesia:change_table_copy_type(schema, NodeName, disc_copies),
     Tabs = mnesia:system_info(tables),
