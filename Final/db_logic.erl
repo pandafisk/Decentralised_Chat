@@ -33,6 +33,7 @@ sendMsg(Group, User, Message) ->
 %% ======================================================
 %% FUNCTIONS FOR DATABASE INTERACTION
 %% ======================================================
+
 %% A function for displaying message history of a group.
 msg_history(Table_name)->
     Iterator =  fun(Rec,_)->
@@ -43,9 +44,9 @@ msg_history(Table_name)->
                     Seperator = "@",
                     List = lexemes(Node, Seperator),
                     NodeName = list_to_atom(titlecase(nth(1, List))),
-                    {{Y,M,D},{ H,MM,SS}} = calendar:now_to_datetime(Time),
+                    {{Y,M,D},{ H,MM,SS}} = calendar:now_to_local_time(Time),
                     Timestamp = lists:flatten(io_lib:format("~B-~2.10.0B-~2.10.0B ~2.10.0B:~2.10.0B:~2.10.0B", [Y, M, D,H,MM,SS])),
-                    io:format("~p: ~p - ~p sent in ~p ~n",[Table_name, NodeName, Msg, Timestamp])
+                    io:format("~p: ~n ~p -- [~p] ~n ~n",[NodeName, Msg, list_to_atom(Timestamp)])
                 end,
     case mnesia:is_transaction() of
         true -> mnesia:foldl(Iterator,[],Table_name);
@@ -99,7 +100,6 @@ uniques([X | Rest], Seen, Acc) ->
 
 % Creates a copy of the current database, and creates a connection to another node.
 addReplica(NodeName) ->
-    rpc:call(NodeName, db_logic, restartReplica, []),
     mnesia:change_config(extra_db_nodes, [NodeName]),
     mnesia:change_table_copy_type(schema, NodeName, disc_copies),
     Tabs = mnesia:system_info(tables),
@@ -113,4 +113,4 @@ removeReplica(Nodename) ->
 %% Restarts a node as a server, in case of a shut-down
 restartReplica() ->
     mnesia:start(),
-    kv_db_supervisor:start_link_from_shell().
+    chat_supervisor:start_link_from_shell().

@@ -21,3 +21,12 @@ chat_client:listUsers(friends).
 chat_client:viewHistory(friends).
 
 The prints don't work yet, because i haven't had time to update them, but i will do that later.
+
+addNode() doesnt work for me.
+addNode() ->
+    mnesia:start(),
+    RunningNodes = mnesia:system_info(running_db_nodes),
+    % Host is one of the random nodes already running Mnesia
+    Host = lists:nth(rand:uniform(length(RunningNodes)), RunningNodes),
+    rpc:call(Host, db_logic, addReplica, [node()]),
+    chat_supervisor:start_link_from_shell().

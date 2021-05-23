@@ -1,7 +1,7 @@
 -module(chat_client).
 
 %% Internal
--export([createGroup/1, sendMessage/2, viewHistory/1, listUsers/1, findUser/2, findGroup/1, start_link/0, addNode/1]).
+-export([createGroup/1, sendMessage/2, viewHistory/1, listUsers/1, findUser/2, findGroup/1, start_link/0, addNode/1, groupList/0]).
 %% Remote
 -export([remote_createGroup/2, remote_sendMessage/4, remote_viewHistory/2, remote_listUsers/2, remote_findUser/3, remote_findGroup/2]).
 %% Helpers
@@ -17,7 +17,7 @@
 start_link() ->
     chat_supervisor:start_link_from_shell().
 
-%% Add local node to cluster. 'Host' must be one node already in the cluster
+%% Add local node to cluster. 'Host' must be one of the running_db_nodes in the cluster
 addNode(Host) ->
     mnesia:start(),
     chat_supervisor:start_link_from_shell(),
@@ -45,9 +45,14 @@ findGroup(Group) ->
 listUsers(Group) ->
     chat_server:users(Group).
 
+%% List all chat group(s) in system
+groupList() ->
+    io:format("---List of available groups--- ~n ~p~n",[mnesia:system_info(tables)]).
 %% Lists the history of the chats in the group
-viewHistory(Table) ->
-    chat_server:history(Table).
+viewHistory(Group) ->
+    io:format("---Chat history of group named '~p'---~n",[Group]),
+    io:format("---START--- ~n"),
+    chat_server:history(Group).
 
 %% ======================================================
 %%              Remote Calls
@@ -91,8 +96,8 @@ showHistoryToAll([], _) ->
     io:format("---END OF CHAT HISTORY--~n");
 
 showHistoryToAll([User|GroupUsers], Group) ->
-    io:format("---USER:~p~n",[User]),
-    io:format("---Group Name:~p~n",[Group]),
+    % io:format("---USER:~p~n",[User]),
+    % io:format("---Group Name:~p~n",[Group]),
     rpc:call(User, chat_client, viewHistory, [Group]),
     showHistoryToAll(GroupUsers, Group).
 
