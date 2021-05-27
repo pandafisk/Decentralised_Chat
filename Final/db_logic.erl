@@ -1,10 +1,14 @@
 -module(db_logic).
 -import(lists,[nth/2]).
 -import(string,[lexemes/2, titlecase/1]).
--compile(export_all).
+% -compile(export_all).
+
+-export([init/0, new_group/1, sendMsg/3, findUser/2, findGroup/1, findUniques/1, msg_history/1]).
+-export([addReplica/1, removeReplica/1, restartReplica/0]).
 
 -record(msg, {date, name, message}).
 
+-spec init() -> 'ok' | {'error',_}.
 init() ->
     mnesia:create_schema([node()]),
     mnesia:start().
@@ -13,6 +17,7 @@ init() ->
 %% ======================================================
 
 %% A function for creating a new group.
+-spec new_group(atom()) -> {'aborted',_} | {'atomic','ok'}.
 new_group(Name) ->
     mnesia:create_table(Name, [
         {attributes, record_info(fields, msg)},
@@ -21,6 +26,7 @@ new_group(Name) ->
         {type, ordered_set}]).
 
 %% A functions that sends a message to the group.
+-spec sendMsg(_,_,_) -> {'aborted',_} | {'atomic',_}.      
 sendMsg(Group, User, Message) ->
     Insert = fun() -> 
         mnesia:write(Group, #msg{
@@ -35,11 +41,11 @@ sendMsg(Group, User, Message) ->
 %% ======================================================
 
 %% A function for displaying message history of a group.
+-spec msg_history(_) -> any().
 msg_history(Table_name)->
     Iterator =  fun(Rec,_)->
                     {_, Time, Name, Msg} = Rec,
                     self() ! Rec,
-                    % Please see
                     Node = atom_to_list(Name),
                     Seperator = "@",
                     List = lexemes(Node, Seperator),
@@ -56,16 +62,19 @@ msg_history(Table_name)->
     end.
 
 %% A function for listing users in a group.
+-spec findUniques(_) -> ['atomic'].
 findUniques(Group) ->
     Users = findUsers(Group),
     uniques(Users).
 
 %% A function for finding a User, based on Username.
+-spec findUser(_,_) -> boolean().
 findUser(Group, User) ->
     Users = findUsers(Group),
     lists:member(User, Users).
 
 %% A function for finding a Group, based on Group name.
+-spec findGroup(_) -> boolean().
 findGroup(Group) ->
     Tabs = mnesia:system_info(local_tables),
     {L,_} = lists:split(length(Tabs)-1, Tabs),
@@ -75,6 +84,7 @@ findGroup(Group) ->
 %% LOCAL FUNCTIONS
 %% ======================================================
 % Find all users that are not unique
+-spec findUsers(_) -> any().
 findUsers(Table_name) ->
     Iterator =  fun(Rec,Arr)->
                     {_, _, Name, _} = Rec,
@@ -99,6 +109,7 @@ uniques([X | Rest], Seen, Acc) ->
     end.
 
 % Creates a copy of the current database, and creates a connection to another node.
+-spec addReplica(atom()) -> [{'aborted',_} | {'atomic','ok'}].
 addReplica(NodeName) ->
     mnesia:change_config(extra_db_nodes, [NodeName]),
     mnesia:change_table_copy_type(schema, NodeName, disc_copies),
@@ -106,11 +117,13 @@ addReplica(NodeName) ->
     [mnesia:add_table_copy(H, NodeName, disc_copies) || H <- Tabs].
     
 %% Removes a given node from the cluster of active server-nodes
+-spec removeReplica(atom()) -> {'aborted',_} | {'atomic','ok'}.
 removeReplica(Nodename) ->
     rpc:call(Nodename, mnesia, stop, []),
     mnesia:del_table_copy(schema, Nodename).
     
 %% Restarts a node as a server, in case of a shut-down
+-spec restartReplica() -> 'true'.
 restartReplica() ->
     mnesia:start(),
     chat_supervisor:start_link_from_shell().

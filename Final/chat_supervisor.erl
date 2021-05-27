@@ -7,9 +7,12 @@
 -define(SERVER, ?MODULE).
 
 %% Public function to start the server
+-spec start_link_from_shell() -> 'true'.
 start_link_from_shell() ->
   {ok, Pid} = supervisor:start_link({local, ?SERVER}, ?MODULE, []),
   unlink(Pid).
+
+-spec start_link() -> 'ignore' | {'error',_} | {'ok',pid()}.
 start_link()->
     supervisor:start_link({local, ?SERVER}, ?MODULE, []). 
 
