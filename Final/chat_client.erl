@@ -55,7 +55,8 @@ listUsers(Group) ->
 %% List all chat group(s) in system
 -spec groupList() -> 'ok'.
 groupList() ->
-    io:format("---List of available groups--- ~n ~p~n",[mnesia:system_info(tables)]).
+    GroupList = lists:delete(schema,mnesia:system_info(tables)),
+    io:format("---List of available groups--- ~n ~p~n",[GroupList]).
 
 %% Lists the history of the chats in the group
 -spec viewHistory(atom()) -> any().
