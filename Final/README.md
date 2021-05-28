@@ -1,6 +1,6 @@
-# Decentralized Chat System using Mnesia
+# Decentralized Chat System using Mnesia DBMS
 
-This is a Distributed and decentralized Peer-to-Peer(P2P) group chat system that supports exchanges of text messages between  multiple group(not individual) along with basic functionalities
+This is a Distributed and decentralized Peer-to-Peer(P2P) group chat system using Mnesia (a distributed telecommunications DBMS)that supports exchanges of text messages between  multiple group(not individual) along with basic functionalities
 
 ## Instructions
 
